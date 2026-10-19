@@ -1,0 +1,10 @@
+*.pro.user
+Makefile
+*.o
+moc_*
+qrc_*
+/RPMS/
+/rnp-build/
+/build*/
+/password-store
+tests/tst_core
