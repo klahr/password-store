@@ -78,6 +78,17 @@ Page {
             }
 
             SectionHeader {
+                text: qsTr("Cover")
+            }
+
+            TextSwitch {
+                text: qsTr("Show one-time code on cover")
+                description: qsTr("The last one-time code you opened, until the key passphrase is forgotten or the app closes. Anyone who sees the phone can read it.")
+                checked: appSettings.otpOnCover
+                onCheckedChanged: appSettings.otpOnCover = checked
+            }
+
+            SectionHeader {
                 text: qsTr("Browsing")
             }
 

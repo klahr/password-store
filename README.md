@@ -24,7 +24,9 @@ new store.
 - Pull down for new passwords and folders, sync and settings. Long press for
   copy, move and delete.
 - Like pass, the first line of an entry is the password. `user:` lines give
-  the username, and `otpauth://totp/...` lines give one-time codes.
+  the username, and `otpauth://totp/...` lines give one-time codes. To add
+  one, edit the entry and scan the site's QR code with the camera or from a
+  picture.
 - Every change is committed to git. Sync pulls, then pushes.
 
 ## Requirements
@@ -52,5 +54,5 @@ Host unit tests: `qmake tests/tests.pro && make && ./tst_core`
 ## License
 
 GPLv3, see [LICENSE](LICENSE). The bundled
-[rnp](https://github.com/rnpgp/rnp) is BSD-2-Clause, see
-[3rdparty/rnp](3rdparty/rnp).
+[rnp](https://github.com/rnpgp/rnp) is BSD-2-Clause and
+[quirc](https://github.com/dlbeer/quirc) is ISC, see [3rdparty/](3rdparty).

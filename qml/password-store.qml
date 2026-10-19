@@ -6,6 +6,28 @@ import "components"
 ApplicationWindow {
     id: app
 
+    property Item rootPage
+    // The last opened one-time code for the cover, kept in memory only
+    property var coverOtp: null
+
+    // Splits a code in two halves for reading it out
+    function formatCode(code, steam) {
+        if (code.length < 6 || steam)
+            return code
+        var half = Math.floor(code.length / 2)
+        return code.substring(0, half) + " " + code.substring(half)
+    }
+
+    // From the cover: the list with the search field focused, unless an
+    // edit is open, which would be lost
+    function search() {
+        app.activate()
+        if (!rootPage || pageStack.find(function(p) { return p.canAccept !== undefined }))
+            return
+        pageStack.pop(rootPage, PageStackAction.Immediate)
+        rootPage.requestSearch()
+    }
+
     function notify(text) {
         // Errors take longer to read
         Notices.show(text, text.length > 40 ? Notice.Long : Notice.Short, Notice.Bottom)
@@ -76,6 +98,24 @@ ApplicationWindow {
         return error
     }
 
+    // The one-time code setup among texts read from QR codes: uri, or a
+    // message saying why there is none
+    function otpFromQr(texts) {
+        var message = qsTr("No QR code found")
+        for (var i = 0; i < texts.length; ++i) {
+            var text = texts[i]
+            if (text.indexOf("otpauth://totp/") === 0)
+                return { uri: text, message: "" }
+            if (text.indexOf("otpauth://hotp/") === 0)
+                message = qsTr("Counter based one-time codes (HOTP) aren't supported")
+            else if (text.indexOf("otpauth-migration://") === 0)
+                message = qsTr("Authenticator app exports aren't supported, scan the code the site shows")
+            else
+                message = qsTr("Not a one-time code: %1").arg(text.length > 60 ? text.substring(0, 60) + "\u2026" : text)
+        }
+        return { uri: "", message: message }
+    }
+
     function gitResult(doneText) {
         return function(result) {
             if (result.ok) {
@@ -114,6 +154,20 @@ ApplicationWindow {
 
     AppSettings {
         id: appSettings
+
+        onOtpOnCoverChanged: {
+            if (!otpOnCover)
+                app.coverOtp = null
+        }
+    }
+
+    // The code goes when the key is locked again
+    Connections {
+        target: pgp
+        onHasPassphraseChanged: {
+            if (!pgp.hasPassphrase)
+                app.coverOtp = null
+        }
     }
 
     Binding { target: store; property: "rootPath"; value: appSettings.storePath }

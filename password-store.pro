@@ -16,7 +16,7 @@ CONFIG += sailfishapp c++14
 QT += concurrent
 PKGCONFIG += openssl json-c zlib
 
-VERSION = 0.2.4
+VERSION = 0.3.2
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += src/password-store.cpp \
@@ -26,7 +26,8 @@ SOURCES += src/password-store.cpp \
     src/passstore.cpp \
     src/passwordentry.cpp \
     src/passwordgenerator.cpp \
-    src/pgp.cpp
+    src/pgp.cpp \
+    src/qrscanner.cpp
 
 HEADERS += src/clipboard.h \
     src/git.h \
@@ -34,7 +35,8 @@ HEADERS += src/clipboard.h \
     src/passstore.h \
     src/passwordentry.h \
     src/passwordgenerator.h \
-    src/pgp.h
+    src/pgp.h \
+    src/qrscanner.h
 
 # rnp (BSD-2-Clause) does the OpenPGP work. The device's gnupg2 is 2.0 and
 # can't handle the ed25519/cv25519 keys or AEAD messages current GnuPG makes,
@@ -59,6 +61,12 @@ PRE_TARGETDEPS += $$rnp.target
 INCLUDEPATH += $$RNP_SRC/include $$RNP_BUILD/src/lib
 LIBS += $$RNP_BUILD/src/lib/librnp.a $$RNP_BUILD/src/libsexpp/libsexpp.a -lbz2
 
+# quirc (ISC) reads QR codes, small enough to compile straight into the app
+QUIRC_SRC = $$PWD/3rdparty/quirc/lib
+INCLUDEPATH += $$QUIRC_SRC
+SOURCES += $$QUIRC_SRC/decode.c $$QUIRC_SRC/identify.c $$QUIRC_SRC/quirc.c $$QUIRC_SRC/version_db.c
+QMAKE_CFLAGS += -std=c99
+
 DISTFILES += qml/password-store.qml \
     qml/cover/CoverPage.qml \
     qml/components/*.qml \
@@ -75,7 +83,9 @@ DISTFILES += qml/password-store.qml \
 # Licenses of the app and of what is bundled in it
 licenses.files = LICENSE 3rdparty/rnp/LICENSE.md 3rdparty/rnp/LICENSE-OCB.md
 licenses.path = /usr/share/$${TARGET}/licenses
-INSTALLS += licenses
+quirc_license.files = 3rdparty/quirc/LICENSE
+quirc_license.path = /usr/share/$${TARGET}/licenses/quirc
+INSTALLS += licenses quirc_license
 
 # The sandbox only has the app's own binary, this adds git and ssh
 sailjail.files = sailjail/password-store.profile

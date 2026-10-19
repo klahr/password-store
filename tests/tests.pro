@@ -3,7 +3,6 @@
 TEMPLATE = app
 TARGET = tst_core
 QT += testlib qml concurrent
-QT -= gui
 CONFIG += c++14 testcase link_pkgconfig
 PKGCONFIG += openssl json-c zlib
 
@@ -15,13 +14,19 @@ SOURCES += tst_core.cpp \
     $$SRC/passstore.cpp \
     $$SRC/passwordentry.cpp \
     $$SRC/passwordgenerator.cpp \
-    $$SRC/pgp.cpp
+    $$SRC/pgp.cpp \
+    $$SRC/qrscanner.cpp
 HEADERS += $$SRC/git.h \
     $$SRC/jscallback.h \
     $$SRC/passstore.h \
     $$SRC/passwordentry.h \
     $$SRC/passwordgenerator.h \
-    $$SRC/pgp.h
+    $$SRC/pgp.h \
+    $$SRC/qrscanner.h
+
+QUIRC_SRC = $$PWD/../3rdparty/quirc/lib
+INCLUDEPATH += $$QUIRC_SRC
+SOURCES += $$QUIRC_SRC/decode.c $$QUIRC_SRC/identify.c $$QUIRC_SRC/quirc.c $$QUIRC_SRC/version_db.c
 
 RNP_SRC = $$PWD/../3rdparty/rnp
 RNP_BUILD = $$OUT_PWD/rnp-build

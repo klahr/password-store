@@ -45,18 +45,16 @@ BackgroundItem {
             truncationMode: TruncationMode.Fade
         }
         Label {
-            // Split in two halves for reading it out
-            text: root.code.length >= 6 && !root.totp.steam
-                  ? root.code.substring(0, Math.floor(root.code.length / 2)) + " "
-                    + root.code.substring(Math.floor(root.code.length / 2))
-                  : root.code
+            text: app.formatCode(root.code, root.totp && root.totp.steam)
             font.pixelSize: Theme.fontSizeExtraLarge
             font.family: "Monospace"
             color: root.highlighted ? Theme.highlightColor : Theme.primaryColor
         }
     }
 
-    ProgressCircle {
+    // ProgressCircle swaps its colours whenever the value goes down, which a
+    // countdown does every second
+    ProgressCircleBase {
         id: progress
 
         anchors {
@@ -68,6 +66,7 @@ BackgroundItem {
         height: width
         value: root.totp && root.totp.period > 0 ? root.remaining / root.totp.period : 0
         progressColor: root.remaining <= 5 ? Theme.errorColor : Theme.highlightColor
+        backgroundColor: Theme.highlightDimmerColor
 
         Label {
             anchors.centerIn: parent

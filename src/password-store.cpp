@@ -5,6 +5,7 @@
 #include "passwordentry.h"
 #include "passwordgenerator.h"
 #include "pgp.h"
+#include "qrscanner.h"
 
 #include <sailfishapp.h>
 
@@ -42,6 +43,7 @@ int main(int argc, char *argv[])
     PasswordEntry entryParser;
     PasswordGenerator generator;
     Clipboard clipboard;
+    QrScanner qrScanner;
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     JsCallback::setEngine(view->engine());
@@ -52,6 +54,7 @@ int main(int argc, char *argv[])
     context->setContextProperty(QStringLiteral("entryParser"), &entryParser);
     context->setContextProperty(QStringLiteral("generator"), &generator);
     context->setContextProperty(QStringLiteral("clipboard"), &clipboard);
+    context->setContextProperty(QStringLiteral("qrScanner"), &qrScanner);
     view->setSource(SailfishApp::pathToMainQml());
     view->show();
 

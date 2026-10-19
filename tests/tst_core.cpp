@@ -3,10 +3,12 @@
 #include "passstore.h"
 #include "passwordentry.h"
 #include "passwordgenerator.h"
+#include "qrscanner.h"
 #include "pgp.h"
 
 #include <QEventLoop>
 #include <QJSEngine>
+#include <QPainter>
 #include <QFile>
 #include <QProcess>
 #include <QTemporaryDir>
@@ -440,6 +442,30 @@ private slots:
         QVERIFY(!r.value("ok").toBool());
         QVERIFY(store.exists("groups/team/y"));
         QVERIFY(!store.exists("y"));
+    }
+
+    void qrCodes()
+    {
+        if (QStandardPaths::findExecutable(QStringLiteral("qrencode")).isEmpty())
+            QSKIP("qrencode not installed");
+        const QString uri = QStringLiteral("otpauth://totp/Example:alex@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example");
+        const QString path = m_data.filePath("qr.png");
+        QProcess::execute(QStringLiteral("qrencode"), QStringList() << "-s" << "6" << "-o" << path << uri);
+        const QImage code(path);
+        QVERIFY(!code.isNull());
+        QCOMPARE(QrScanner::decode(code), QStringList() << uri);
+
+        // Like a camera frame: turned, smaller, off centre on a grey background
+        QImage frame(1080, 1920, QImage::Format_RGB32);
+        frame.fill(QColor(90, 90, 90));
+        QPainter painter(&frame);
+        painter.translate(400, 900);
+        painter.rotate(17);
+        painter.drawImage(QRect(0, 0, 420, 420), code);
+        painter.end();
+        QCOMPARE(QrScanner::decode(frame), QStringList() << uri);
+
+        QCOMPARE(QrScanner::decode(QImage(200, 200, QImage::Format_RGB32)), QStringList());
     }
 
     void askPassHost()

@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import Sailfish.Pickers 1.0
 
 Dialog {
     id: dialog
@@ -10,11 +11,13 @@ Dialog {
     property string dir
     property string content
     property Item entryPage
-    // Name typed before, when saving failed
+    // Path typed before, when saving failed
     property string initialName
 
+    readonly property string startPath: initialName.length > 0 ? initialName : path
+    property string folder: startPath.length > 0 ? store.folderOf(startPath) : dir
     readonly property var parts: entryParser.splitForEdit(content)
-    readonly property string newPath: nameField.text.trim()
+    readonly property string newPath: store.join(folder, nameField.text.trim())
     readonly property string pathError: {
         var error = store.validatePath(newPath)
         if (error.length === 0 && newPath !== path && store.exists(newPath))
@@ -23,6 +26,34 @@ Dialog {
     }
 
     canAccept: pathError.length === 0
+
+    // Puts uri in place of the one-time code line, or adds it
+    function setOtp(uri) {
+        var lines = extraArea.text.length > 0 ? extraArea.text.split("\n") : []
+        for (var i = 0; i < lines.length; ++i) {
+            if (lines[i].indexOf("otpauth://") === 0 || /^totp:/i.test(lines[i])) {
+                lines[i] = uri
+                extraArea.text = lines.join("\n")
+                app.notify(qsTr("One-time code replaced"))
+                return
+            }
+        }
+        lines.push(uri)
+        extraArea.text = lines.join("\n")
+        app.notify(qsTr("One-time code added"))
+    }
+
+    function scanned(result) {
+        if (!result.ok) {
+            app.notify(result.error)
+            return
+        }
+        var otp = app.otpFromQr(result.texts)
+        if (otp.uri.length > 0)
+            setOtp(otp.uri)
+        else
+            app.notify(otp.message)
+    }
 
     onAccepted: {
         var text = entryParser.joinForEdit(passwordField.text, extraArea.text, parts.line, parts.prefix)
@@ -52,6 +83,14 @@ Dialog {
         })
     }
 
+    Component {
+        id: imagePicker
+
+        ImagePickerPage {
+            onSelectedContentPropertiesChanged: qrScanner.scanFile(selectedContentProperties.filePath, dialog.scanned)
+        }
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height + Theme.paddingLarge
@@ -66,42 +105,48 @@ Dialog {
                 acceptText: qsTr("Save")
             }
 
+            ValueButton {
+                label: qsTr("Folder")
+                value: dialog.folder.length > 0 ? dialog.folder : qsTr("Store root")
+                onClicked: {
+                    var picker = pageStack.push(Qt.resolvedUrl("FolderPickerPage.qml"), { title: qsTr("Folder") })
+                    picker.selected.connect(function(folder) { dialog.folder = folder })
+                }
+            }
+
             TextField {
                 id: nameField
 
                 width: parent.width
-                label: dialog.pathError.length > 0 ? dialog.pathError : qsTr("Name, use / for folders")
+                label: dialog.pathError.length > 0 && text.length > 0 ? dialog.pathError : qsTr("Name")
                 placeholderText: qsTr("Name")
                 errorHighlight: dialog.pathError.length > 0 && text.length > 0
-                text: dialog.initialName.length > 0 ? dialog.initialName
-                                                    : dialog.path.length > 0 ? dialog.path
-                                                                             : (dialog.dir.length > 0 ? dialog.dir + "/" : "")
+                text: dialog.startPath.length > 0 ? store.nameOf(dialog.startPath) : ""
                 inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
                 focus: dialog.path.length === 0
                 EnterKey.iconSource: "image://theme/icon-m-enter-next"
                 EnterKey.onClicked: passwordField.focus = true
             }
 
-            Row {
+            PasswordField {
+                id: passwordField
+
                 width: parent.width
+                label: qsTr("Password")
+                placeholderText: label
+                text: dialog.parts.password
+                EnterKey.iconSource: "image://theme/icon-m-enter-next"
+                EnterKey.onClicked: extraArea.focus = true
+            }
 
-                PasswordField {
-                    id: passwordField
+            Item {
+                width: 1
+                height: Theme.paddingMedium
+            }
 
-                    width: parent.width - generateButton.width - Theme.horizontalPageMargin
-                    label: qsTr("Password")
-                    placeholderText: label
-                    text: dialog.parts.password
-                    showEchoModeToggle: true
-                    EnterKey.iconSource: "image://theme/icon-m-enter-next"
-                    EnterKey.onClicked: extraArea.focus = true
-                }
-
-                IconButton {
-                    id: generateButton
-
-                    anchors.verticalCenter: passwordField.verticalCenter
-                    icon.source: "image://theme/icon-m-refresh"
+            ButtonLayout {
+                Button {
+                    text: qsTr("Generate password")
                     onClicked: {
                         var generator = pageStack.push(Qt.resolvedUrl("GeneratorDialog.qml"))
                         generator.accepted.connect(function() {
@@ -112,12 +157,17 @@ Dialog {
                 }
             }
 
+            Item {
+                width: 1
+                height: Theme.paddingLarge
+            }
+
             TextArea {
                 id: extraArea
 
                 width: parent.width
-                label: qsTr("Username, URL, notes")
-                placeholderText: qsTr("login: name\nurl: https://example.com\notpauth://totp/...")
+                label: qsTr("Username, URL and notes")
+                placeholderText: label
                 text: dialog.parts.rest
                 inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
             }
@@ -125,6 +175,34 @@ Dialog {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("One per line, like login: name or url: https://example.com")
+                wrapMode: Text.Wrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+            }
+
+            SectionHeader {
+                text: qsTr("One-time code")
+            }
+
+            ButtonLayout {
+                Button {
+                    text: qsTr("Scan QR code")
+                    onClicked: {
+                        var scan = pageStack.push(Qt.resolvedUrl("ScanPage.qml"))
+                        scan.found.connect(dialog.setOtp)
+                    }
+                }
+                Button {
+                    text: qsTr("QR code from picture")
+                    onClicked: pageStack.push(imagePicker)
+                }
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                topPadding: Theme.paddingLarge
                 visible: store.recipients(dialog.newPath).length === 0 && dialog.pathError.length === 0
                 text: qsTr("No .gpg-id covers this folder, so it can't be encrypted")
                 color: Theme.errorColor

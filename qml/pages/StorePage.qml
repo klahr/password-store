@@ -69,7 +69,11 @@ Page {
     allowedOrientations: Orientation.All
 
     onQueryChanged: refresh()
-    Component.onCompleted: refresh()
+    Component.onCompleted: {
+        refresh()
+        if (isRoot)
+            app.rootPage = page
+    }
 
     // Focus taken before the window is active is lost, so wait for both
     // the page and the window
@@ -83,11 +87,19 @@ Page {
         searchField.forceActiveFocus()
     }
 
+    // Focuses the search field once the page and window are active
+    function requestSearch() {
+        startSearchPending = store.initialized
+        focusStartSearch()
+    }
+
     onStatusChanged: {
-        if (status !== PageStatus.Active || startSearchHandled)
+        if (status !== PageStatus.Active)
             return
-        startSearchHandled = true
-        startSearchPending = isRoot && appSettings.searchOnStart && store.initialized
+        if (!startSearchHandled) {
+            startSearchHandled = true
+            startSearchPending = isRoot && appSettings.searchOnStart && store.initialized
+        }
         focusStartSearch()
     }
 

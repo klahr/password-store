@@ -19,7 +19,8 @@ public:
     QString label() const { return m_label; }
     int remaining() const { return m_remaining; }
 
-    // clearAfter in seconds, 0 keeps the text
+    // clearAfter in seconds, 0 keeps the text. label stays set until the
+    // text is cleared or something else is copied.
     Q_INVOKABLE void copy(const QString &text, const QString &label, int clearAfter);
     Q_INVOKABLE void clear();
 

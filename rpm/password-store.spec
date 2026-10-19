@@ -1,14 +1,16 @@
 Name:       password-store
 
 Summary:    Client for pass, the standard unix password manager
-Version:    0.2.4
+Version:    0.3.2
 Release:    1
-# The app is GPLv3, the bundled rnp BSD-2-Clause
-License:    GPLv3 and BSD
+# The app is GPLv3, the bundled rnp BSD-2-Clause and quirc ISC
+License:    GPLv3 and BSD and ISC
 URL:        https://github.com/klahr/password-store
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   sailfishsilica-qt5 >= 0.10.9
 Requires:   nemo-qml-plugin-configuration-qt5
+Requires:   qt5-qtdeclarative-import-multimedia
+Requires:   qt5-qtmultimedia-plugin-mediaservice-gstcamerabin
 Requires:   git
 Requires:   openssh-clients
 BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2

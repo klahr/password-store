@@ -43,6 +43,8 @@ Page {
     function show(text) {
         content = text
         entry = entryParser.parse(text)
+        if (appSettings.otpOnCover && entry.hasTotp)
+            app.coverOtp = { name: store.nameOf(path), totp: entry.totp }
     }
 
     allowedOrientations: Orientation.All

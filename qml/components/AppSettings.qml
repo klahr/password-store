@@ -17,6 +17,7 @@ ConfigurationGroup {
     property int showTime: 60
     // Minutes the key passphrase is remembered, 0 until the app closes
     property int passphraseTimeout: 5
+    property bool otpOnCover: false
 
     property int classicLength: 20
     property bool classicDigits: true

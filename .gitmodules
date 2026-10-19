@@ -1,3 +1,6 @@
 [submodule "3rdparty/rnp"]
 	path = 3rdparty/rnp
 	url = https://github.com/rnpgp/rnp.git
+[submodule "3rdparty/quirc"]
+	path = 3rdparty/quirc
+	url = https://github.com/dlbeer/quirc.git

@@ -19,10 +19,8 @@ void Clipboard::copy(const QString &text, const QString &label, int clearAfter)
     m_remaining = clearAfter;
     emit labelChanged();
     emit remainingChanged();
-    if (clearAfter > 0)
-        m_timer.start();
-    else
-        m_timer.stop();
+    // Watches for something else being copied even when nothing is cleared
+    m_timer.start();
 }
 
 void Clipboard::clear()
@@ -39,6 +37,8 @@ void Clipboard::tick()
         reset();
         return;
     }
+    if (m_remaining <= 0)
+        return;
     --m_remaining;
     emit remainingChanged();
     if (m_remaining <= 0)
